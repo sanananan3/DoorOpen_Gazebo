@@ -1,0 +1,152 @@
+<?xml version="1.0"?>
+
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="panda">
+
+
+  <xacro:arg name="cell_layout_1" default="false"/>
+  <xacro:property name="cell_layout_1" value="$(arg cell_layout_1)"/>
+  <xacro:arg name="cell_layout_2" default="false"/>
+  <xacro:property name="cell_layout_2" value="$(arg cell_layout_2)"/>
+  
+  <xacro:arg name="EE_no" default="false"/>
+  <xacro:property name="EE_no" value="$(arg EE_no)"/>
+
+
+  <xacro:include filename="$(find panda_ros2_gazebo)/urdf/panda_macro.urdf.xacro"/>	
+  <xacro:include filename="$(find panda_ros2_gazebo)/urdf/pull_door.urdf.xacro"/>
+
+  <xacro:panda 
+    prefix=""
+    EE_no="${EE_no}"
+  />
+
+
+  <link name="world"/>
+
+  <xacro:pull_handle
+    prefix=""
+    parent_link="world"/>
+
+
+  <xacro:if value="${cell_layout_1}">
+    <joint name="world-base_link-fixed" type="fixed">
+      <parent link="world"/>
+      <child link="panda_link0"/>
+    </joint>
+  </xacro:if>
+
+  <xacro:if value="${cell_layout_2}">
+    <link name='panda_base'>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="100"/>
+        <inertia ixx="0.01"  ixy="0"  ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial>
+      <collision name='collision'>
+        <origin xyz="0 0 0" rpy=" 0 0 0"/> 
+        <geometry>
+          <box size = "0.2 0.2 0.5"/>
+        </geometry>
+      </collision>
+      <visual name='chassis_visual'>
+        <origin xyz="0 0 0" rpy=" 0 0 0"/>
+        <geometry>
+          <box size = "0.2 0.2 0.5"/>
+        </geometry>
+        <material name="red">
+          <color rgba="1 0 0 1"/>
+        </material>
+      </visual>
+    </link>
+    <gazebo reference="panda_base">
+      <material>Gazebo/Red</material>
+    </gazebo>
+
+    <joint name="world_joint" type="fixed">
+      <parent link="world" />
+      <child link = "panda_base" />
+      <origin xyz="0.0 0.0 0.25" rpy="0.0 0.0 0.0" />
+    </joint>
+    <joint name="panda_joint" type="fixed">
+      <parent link="panda_base" />
+      <child link = "panda_link0" />
+      <origin xyz="0.0 0.0 0.255" rpy="0.0 0.0 0.0" /> 
+    </joint>
+
+    <joint name="door_joint" type="fixed">
+      <parent link="world" />
+      <child link = "frame" />
+      <origin xyz="0.2 0.2 0.255" rpy="0.0 0.0 0.0" /> 
+    </joint>
+
+
+    <xacro:property name="camera_link" value="0.05" /> <!-- Size of square 'camera' box -->
+
+    <link name="camera_link">
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${camera_link} ${camera_link} ${camera_link}"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${camera_link} ${camera_link} ${camera_link}"/>
+        </geometry>
+        <material name="red"/>
+      </visual>
+
+      <inertial>
+        <mass value="1e-5" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="1e-6" ixy="0" ixz="0" iyy="1e-6" iyz="0" izz="1e-6" />
+      </inertial>
+    </link>
+
+    <gazebo reference="camera_link">
+      <material>Gazebo/Green</material>
+    </gazebo>
+
+    <joint name="camera_joint" type="fixed">
+      <parent link="world" />
+      <child link="camera_link" />
+      <origin xyz="0.5 0 1.35" rpy="0 1.57079632679 0"/>
+    </joint>
+
+    <gazebo reference="camera_link">
+      <sensor type="camera" name="camera1">
+        <update_rate>10.0</update_rate>
+        <camera name="head">
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>800</width>
+            <height>400</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+        </camera>
+        <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>/camera1</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>camera_link</frameName>
+          <hackBaseline>0.07</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+      </sensor>
+    </gazebo>
+
+  </xacro:if>
+
+</robot>
